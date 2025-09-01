@@ -216,8 +216,7 @@ debug_*.jpg
 
 # --- ARCHIVOS DE DOCUMENTACIÓN ESPECÍFICOS ---
 # PDFs generados (mantener solo la versión final)
-*.pdf
-!docs/requerimientos.pdf
+!docs/*/*.pdf
 !README.pdf
 
 # Archivos temporales de LaTeX específicos del proyecto
