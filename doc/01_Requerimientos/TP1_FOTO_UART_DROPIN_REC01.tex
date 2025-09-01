@@ -1,0 +1,403 @@
+
+\PassOptionsToPackage{unicode=true,pdfencoding=auto,hidelinks,breaklinks=true}{hyperref}
+\documentclass[11pt,codirector]{charter}
+
+% --- Paquetes base ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+
+% --- Tablas y color ---
+\usepackage{tabularx}
+\usepackage[table]{xcolor}
+\usepackage{booktabs}
+
+% --- URLs y microtipografía (mejor corte de líneas/URLs) ---
+\usepackage{xurl}
+\usepackage{microtype}
+
+% --- Unidades (con fallback sencillo si siunitx no existe) ---
+\IfFileExists{siunitx.sty}{%
+	\usepackage{siunitx}
+	\DeclareSIUnit{\baud}{Bd}
+	\DeclareSIUnit{\byte}{B}
+	\sisetup{
+		per-mode = symbol,
+		output-decimal-marker = {,}
+	}
+}{%
+	\newcommand{\SI}[2]{#1~#2}
+	\newcommand{\si}[1]{#1}
+	\newcommand{\baud}{Bd}
+	\newcommand{\byte}{B}
+}
+
+% --- TikZ (una sola vez, librerías consolidadas) ---
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds,shadows,shadings,matrix,shapes}
+
+% --- Otros ---
+\usepackage{enumitem}
+\usepackage{pdflscape}
+\usepackage{fontawesome5}
+\usepackage{fmtcount}
+
+% --- Encabezado alto para fancyhdr de la clase ---
+\setlength{\headheight}{64pt}
+
+% --- Helpers ---
+\makeatletter
+\newcommand{\mytwodigits}[1]{\two@digits{#1}}
+\makeatother
+
+\newcounter{reqCounter}
+\setcounter{reqCounter}{0}
+
+% --- HYPERREF: cargar una sola vez (condicional) y configuración ---
+\makeatletter
+\@ifpackageloaded{hyperref}{}{%
+	\usepackage{hyperref}% sin opciones (ya pasadas arriba con \PassOptionsToPackage)
+}
+\makeatother
+\hypersetup{hidelinks,unicode=true,pdfencoding=auto,breaklinks=true}
+
+% Evitar tokens problemáticos en marcadores PDF (títulos/captions)
+\pdfstringdefDisableCommands{%
+	\def\\{ }%
+	\def\bigskip{}%
+	\def\texttt#1{#1}%
+	\def\(\){}% ignora math parens en bookmarks si aparecieran
+}
+
+% ================== METADATOS ==================
+\materia{Requerimientos FOTO-UART-DROPIN}
+\bimestre{}
+\docentes{}
+\titulo{Requerimientos para el Sistema de Captura de Imágenes
+	\texorpdfstring{\\\textnormal{Foto UART Drop-in}}{ — Foto UART Drop-in}}
+\posgrado{Centro de Investigación en Tecnologías para la Sociedad}
+\autor{Facultad de Ingeniería}
+\director{Dra. Zoë Fleming}
+\pertenenciaDirector{UDD}
+\codirector{}
+\pertenenciaCoDirector{}
+\Investigadores{Alejandro Rebolledo}
+\cliente{}
+\empresaCliente{Proyecto de Captura de Imágenes por UART}
+\fechaINICIO{31 de agosto de 2025}
+\CODrequerimiento{FOTO-UART-DROPIN-RS01-REQ}
+
+\begin{document}
+	
+	\maketitle
+	\tableofcontents
+	
+	\newpage
+	
+	\section*{Registros de cambios}
+	\label{sec:registro}
+	
+	\begin{table}[ht]
+		\centering
+		\begin{tabularx}{\linewidth}{@{}|c|X|c|@{}}
+			\hline
+			\rowcolor[HTML]{C0C0C0}
+			Revisión & \multicolumn{1}{c|}{\cellcolor[HTML]{C0C0C0}Detalles de los cambios realizados} & Fecha \\ \hline
+			FOTO-UART-RS01-REQ & Creación del documento basado en especificaciones técnicas & 31 de agosto de 2025 \\ \hline
+		\end{tabularx}
+		\label{sec:cierre}
+	\end{table}
+	
+	\pagebreak
+	
+	\section{Introducción}
+	\label{sec:intro}
+	
+	\subsection{Propósito}
+	El objetivo principal de este Documento de Especificación de Requisitos del Sistema (ERS) es definir los requisitos técnicos necesarios para el desarrollo de un sistema de captura y transmisión de imágenes compatible con el protocolo UART existente. La solución propuesta debe funcionar como un ``drop-in replacement'' que permita capturar, procesar y transmitir imágenes manteniendo compatibilidad con sistemas ESP32 existentes, sin requerir modificaciones en el hardware receptor.
+	
+	\subsection{Ámbito del sistema}
+	\begin{itemize}
+		\item El software se denomina \textbf{FOTO-UART-DROPIN} (Sistema de Captura de Imágenes Compatible por UART).
+		\item El sistema capturará imágenes, aplicará mejoras opcionales y transmitirá por UART usando un protocolo de \textit{handshake}. Mantiene compatibilidad con receptores ESP32 existentes.
+		\item El sistema no incluye mantenimiento post-implementación, actualizaciones de firmware remotas, ni soporte técnico continuo.
+	\end{itemize}
+	
+	\subsection{Definiciones, Acrónimos y Abreviaturas}
+	\begin{tabular}{lp{11.5cm}}
+		\toprule
+		\textbf{Abreviatura} & \textbf{Descripción} \\ \midrule
+		ACK & Confirmación de recepción correcta de un chunk (``\texttt{ACK\textbackslash n}''). \\
+		AF & \textit{Auto Focus} (autofoco) de la cámara. \\
+		CLAHE & \textit{Contrast Limited Adaptive Histogram Equalization}. \\
+		CM3 & Camera Module 3 (IMX708), cámara oficial de Raspberry Pi con AF. \\
+		CSI-2 & MIPI \textit{Camera Serial Interface} 2 (bus de cámara en Raspberry Pi). \\
+		JPEG & Formato de compresión de imágenes Joint Photographic Experts Group. \\
+		UART & Puerto serie asíncrono (8N1 @ \SI{115200}{\baud}). \\
+		USB & Universal Serial Bus; usado en pruebas como gadget CDC-ACM. \\
+		\bottomrule
+	\end{tabular}
+	
+	\subsection{Referencias}
+	\begin{enumerate}
+		\item \href{https://standards.ieee.org/ieee/830/1222/}{IEEE Std 830-1998. \textit{IEEE Recommended Practice for Software Requirements Specifications}.}
+		\item \href{https://www.raspberrypi.com/documentation/accessories/camera.html}{Raspberry Pi Foundation. (2025). \textit{Camera Module 3 (docs generales)}.}
+		\item \href{https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf}{Espressif Systems. (2024). \textit{ESP32 Technical Reference Manual} (PDF).}
+		\item \href{https://www.iso.org/standard/28245.html}{ISO/IEC 8859-1:1998. \textit{Information technology — 8-bit single-byte coded graphic character sets — Part 1: Latin alphabet No. 1}.}
+		\item \href{https://datatracker.ietf.org/doc/html/rfc3986}{RFC 3986. (2005). \textit{Uniform Resource Identifier (URI): Generic Syntax}.}
+		\item \href{https://github.com/AleReb/fotoForward}{Alejandro Rebolledo. (2025). \textit{fotoForward} (Repositorio GitHub). Accedido el 31-08-2025.}
+		
+	\end{enumerate}
+	
+	\subsection{Visión general del documento}
+	Este documento sigue el espíritu del estándar IEEE~830 e introduce requisitos verificables y trazables para un sistema de captura de imágenes compatible con UART.
+	
+	\section{Descripción general}
+	\subsection{Perspectiva del producto}
+	\begin{description}[leftmargin=1.8cm,style=nextline]
+		\item[Interoperabilidad:] Mantiene compatibilidad total con receptores ESP32 respetando el protocolo UART.
+		\item[Reemplazo modular:] Sustituye sistemas existentes sin cambios en el receptor.
+		\item[Independencia:] Autonomía en captura, procesamiento y transmisión.
+		\item[Escalabilidad:] Permite nuevos sensores/algoritmos sin afectar la interfaz UART.
+	\end{description}
+	
+	\subsection{Funciones del producto}
+	\begin{description}[leftmargin=1.8cm,style=nextline]
+		\item[Captura de imágenes:] Con cámaras soportadas (p.ej., CM3 IMX708 o webcam USB).
+		\item[Procesamiento:] Mejoras opcionales (CLAHE, \textit{unsharp}), redimensionado con AR.
+		\item[Comunicación UART:] Protocolo exacto READY/ACK/DONE con chunks de \SI{256}{\byte}.
+		\item[Almacenamiento local:] Guarda original (full-res) y procesada (enhanced).
+		\item[Errores:] Timeouts y un reintento total automático.
+	\end{description}
+	
+	\begin{figure}[htpb]
+		\centering
+		\shorthandoff{<>}
+		\begin{tikzpicture}[node distance=1.2cm]
+			\node (camera) [draw, rectangle, fill=green!10!white, align=center]{\textbf{Cámara}\\ \faCamera};
+			\node (processor) [below=of camera, draw, rectangle, fill=blue!10!white, align=center]{\textbf{Procesador}\\ \textbf{de Imagen}\\ \faMicrochip};
+			\node (storage) [left=of processor, draw, fill=yellow!10!white, rectangle, align=center]{Almacenamiento \\ Local \faHdd};
+			\node (uart) [right=of processor, draw, rectangle, align=center]{Interfaz\\UART \faPlug};
+			\node (esp32) [below=of uart, draw, rectangle, fill=red!10!white, align=center]{Receptor\\ESP32 \faWifi};
+			\draw[-stealth] (camera) -- (processor);
+			\draw[stealth-stealth] (processor) -- (storage);
+			\draw[-stealth] (processor) -- (uart);
+			\draw[-stealth] (uart) -- (esp32);
+		\end{tikzpicture}
+		\shorthandon{<>}
+		\caption{Esquema de bloques del sistema de captura de imágenes.}
+		\label{fig:diagBloques}
+	\end{figure}
+	
+	\subsection{Usuarios}
+	\begin{description}[leftmargin=1.8cm,style=nextline]
+		\item[Desarrolladores:] Integración y ampliación.
+		\item[Integradores:] Puesta en marcha y diagnóstico.
+		\item[Operadores:] Uso mediante comandos simples.
+	\end{description}
+	
+	\subsection{Restricciones}
+	\begin{description}[leftmargin=1.8cm,style=nextline]
+		\item[Protocolo:] UART \SI{115200}{\baud} 8N1, comandos exactos y secuencias de \textit{handshake}.
+		\item[Memoria:] Procesamiento por chunks para reducir RAM.
+		\item[Hardware:] Soporta distintos tipos de cámara con misma salida UART.
+		\item[Tiempo:] \textbf{SLA} definido en \S\ref{sec:sla}.
+		\item[Lenguaje:] Implementación en C/C++/Python según plataforma.
+	\end{description}
+	
+	\section{Requisitos específicos}
+	
+	\subsection{Priorización y estabilidad}
+	Cada requisito \textbf{RS01-REQxx} se clasifica como \{Esencial, Condicional, Opcional\} y estabilidad \{Alta, Media, Baja\}. Se incluye en línea al final de cada requisito.
+	
+	\subsection{Interfaces externas}
+	\label{sec:interfaces}
+	\begin{description}[leftmargin=1.8cm,style=nextline]
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		UART a \SI{115200}{\baud} (8N1). \emph{Prioridad: Esencial; Estabilidad: Alta.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Comando de inicio: ``\texttt{foto\textbackslash n}'' con variantes ``\texttt{foto [ancho]\textbackslash n}'' y ``\texttt{foto [ancho] [calidad]\textbackslash n}''. Codificación UTF-8, terminador LF. \emph{Esencial; Alta.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Header exacto: ``\texttt{YYYYMMDD\_HHMMSS|tamaño\_bytes\textbackslash n}''. \emph{Esencial; Alta.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Handshake: esperar ``\texttt{READY\textbackslash n}''; transmitir en chunks de \SI{256}{\byte}; esperar ``\texttt{ACK\textbackslash n}'' por cada chunk; finalizar esperando ``\texttt{DONE\textbackslash n}''. \emph{Esencial; Alta.}
+	\end{description}
+	
+	\subsection{Funciones}
+	\begin{description}[leftmargin=1.8cm,style=nextline]
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Captura full-res y generación de versión procesada/redimensionada para UART. \emph{Esencial; Alta.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Mejoras opcionales (CLAHE, \textit{unsharp}) configurables. \emph{Condicional; Media.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Redimensionado manteniendo AR; ancho por defecto \SI{1024}{px}. \emph{Esencial; Alta.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Almacenamiento local: original en \texttt{fullres/} y procesada en \texttt{enhanced/}, ambos con timestamp. \emph{Esencial; Alta.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Reintento automático: un único reintento total ante timeout/\texttt{NACK\_TIMEOUT}. \emph{Esencial; Alta.}
+	\end{description}
+	
+	\subsection{Requisitos de rendimiento}
+	\label{sec:sla}
+	\begin{description}[leftmargin=1.8cm,style=nextline]
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		\textbf{SLA de tiempo (\texorpdfstring{$\leq$}{<=} 110~KB):} desde \texttt{foto} hasta header \texorpdfstring{$\leq$}{<=} \SI{5}{s}; tiempo total hasta \texttt{DONE} \texorpdfstring{$\leq$}{<=} \SI{10}{s} a \SI{115200}{\baud}. \emph{Esencial; Alta.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Chunks de \SI{256}{\byte} exactos (último puede ser menor). Timeout por \texttt{ACK}=\SI{10}{s}. \emph{Esencial; Alta.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Compatibilidad con tamaños mayores por chunks (sin garantía de SLA de \SI{10}{s}). \emph{Opcional; Media.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Parámetros: ancho \([100,4608]\) px; calidad \([1,10]\) mapeada a JPEG \([10,100]\). \emph{Esencial; Alta.}
+	\end{description}
+	
+	\subsection{Restricciones de diseño}
+	\begin{description}[leftmargin=1.8cm,style=nextline]
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Timestamps: \texttt{YYYYMMDD\_HHMMSS}. \emph{Esencial; Alta.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Imágenes en JPEG con calidad configurable; opción progresivo habilitable. \emph{Esencial; Alta.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Mapeo de calidad: \texttt{jpeg\_quality = clamp(quality\_param,1,10) * 10}. \emph{Esencial; Alta.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Estructura de directorios: \texttt{storage/fullres}, \texttt{storage/enhanced}, \texttt{storage/logs}. \emph{Esencial; Alta.}
+	\end{description}
+	
+	\subsection{Atributos del sistema}
+	\begin{description}[leftmargin=1.8cm,style=nextline]
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Logging con rotación: operaciones, timestamps, errores, reintentos. \emph{Esencial; Alta.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Robustez ante desconexiones: timeouts y recuperación automática. \emph{Esencial; Alta.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Validación de comandos y respuesta a malformados (\texttt{ERR\_CMD\textbackslash n}). \emph{Esencial; Alta.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Indicadores de estado durante captura y transmisión. \emph{Condicional; Media.}
+	\end{description}
+	
+	\subsection{Otros requisitos}
+	\begin{description}[leftmargin=1.8cm,style=nextline]
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Configuración por JSON: puerto, rutas y cámara/perfiles. \emph{Esencial; Alta.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Diagnóstico: verificación de cámara y puerto UART. \emph{Esencial; Alta.}
+		
+		\stepcounter{reqCounter}
+		\item[\textbf{[\CODrequerimiento\mytwodigits{\value{reqCounter}}]}]
+		Plataformas: Raspberry Pi OS, Ubuntu, Debian con libcamera/OpenCV. \emph{Esencial; Alta.}
+	\end{description}
+	
+	\subsection{Entradas inválidas y manejo de errores}
+	Comandos malformados (p.ej., ``\texttt{foto abc}'' o calidad fuera de rango) generan \texttt{ERR\_CMD\textbackslash n}, se registra en log y el sistema permanece a la espera del siguiente comando.
+	
+	\subsection{Matriz de trazabilidad (REQ a TEST)}
+	\begin{tabularx}{\linewidth}{@{}l X l@{}}
+		\toprule
+		\textbf{REQ} & \textbf{Descripción} & \textbf{Caso de prueba} \\ \midrule
+		RS01-REQ01 & UART 115200 8N1 exacto & CP-PROTO-01 \\
+		RS01-REQ04 & READY/ACK/DONE exactos & CP-PROTO-01, CP-TIMEOUT-02 \\
+		SLA & \texorpdfstring{$\leq$}{<=} 10 s hasta 110 KB & CP-REN-01 \\
+		Chunks & 256 B exactos & CP-CHNK-01 \\
+		Almacenamiento & fullres + enhanced & CP-IO-02 \\
+		\bottomrule
+	\end{tabularx}
+	
+	\section{Anexos}
+	
+	\subsection{Protocolo de Comunicación UART}
+	\subsubsection*{Secuencia completa}
+	\begin{enumerate}
+		\item \textbf{Comando inicial:} Receptor envía ``\texttt{foto\textbackslash n}''
+		\item \textbf{Preparación:} Sistema captura y procesa imagen
+		\item \textbf{Header:} Sistema envía ``\texttt{YYYYMMDD\_HHMMSS|tamaño\_bytes\textbackslash n}''
+		\item \textbf{Confirmación:} Receptor responde ``\texttt{READY\textbackslash n}''
+		\item \textbf{Transmisión:} Sistema envía chunks de \SI{256}{\byte}
+		\item \textbf{ACK:} Receptor confirma cada chunk con ``\texttt{ACK\textbackslash n}''
+		\item \textbf{Finalización:} Receptor envía ``\texttt{DONE\textbackslash n}''
+	\end{enumerate}
+	
+	\subsection{Entorno de pruebas sin ESP32 (USB/micro-USB)}
+	\begin{enumerate}
+		\item \textbf{USB Gadget (CDC-ACM):} habilitar \texttt{dwc2,g\_serial} en \texttt{/boot/cmdline.txt}; RPi expone \texttt{/dev/ttyGS0} y el PC ve \texttt{/dev/ttyACM0}.
+		\item \textbf{UART TTL:} dongle USB–TTL (3.3~V) en \texttt{/dev/serial0} (RPi) y \texttt{/dev/ttyUSB0} (PC).
+		\item \textbf{Simulador Host (PC):} envía \texttt{foto[\,[ancho][\,calidad]]\textbackslash n}, espera header, responde \texttt{READY\textbackslash n}, \texttt{ACK\textbackslash n} por chunk y \texttt{DONE\textbackslash n}. Soporta \texttt{NACK\_TIMEOUT}.
+	\end{enumerate}
+	
+	\subsection{Configuración JSON (ejemplo)}
+	\begin{verbatim}
+		{
+			"serial": { "puerto": "/dev/ttyAMA0", "baudrate": 115200, "timeout": 1 },
+			"imagen": {
+				"ancho_default": 1024,
+				"calidad_default": 5,
+				"chunk_size": 256,
+				"ack_timeout": 10,
+				"jpeg_progressive": true
+			},
+			"almacenamiento": {
+				"directorio_fullres": "storage/fullres",
+				"directorio_enhanced": "storage/enhanced",
+				"mantener_originales": true,
+				"logs_dir": "storage/logs"
+			},
+			"procesamiento": { "aplicar_mejoras": true, "unsharp_mask": true, "clahe_enabled": true },
+			"limites": { "max_jpeg_bytes": 112640, "fallback_quality_drop": 10 }
+		}
+	\end{verbatim}
+	
+	\subsection{Casos de Prueba (resumen)}
+	\begin{table}[htpb]
+		\centering
+		\caption{Casos de prueba obligatorios}
+		\label{tab:pruebas}
+		\begin{tabular}{|l|l|l|}
+			\hline
+			\textbf{Caso de Prueba} & \textbf{Entrada} & \textbf{Resultado Esperado} \\ \hline
+			CP-PROTO-01 & ``\texttt{foto\textbackslash n}'' & Header + transmisión completa \\
+			CP-REN-01 & ``\texttt{foto 1024 5\textbackslash n}'' & t\_header \texorpdfstring{$\leq$}{<=} \SI{5}{s}, t\_total \texorpdfstring{$\leq$}{<=} \SI{10}{s} \\
+			CP-CHNK-01 & Flujo normal & 256 B exactos por chunk \\
+			CP-TIMEOUT-02 & Sin READY o sin ACK & Reintento total único + nuevo header \\
+			CP-IO-02 & N/A & Guardado en \texttt{fullres}/\texttt{enhanced} \\ \hline
+		\end{tabular}
+	\end{table}
+	
+\end{document}

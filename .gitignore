@@ -1,0 +1,286 @@
+# ============================================================================
+# .gitignore para Proyecto FOTO-UART-DROPIN
+# Sistema de Captura de Imágenes con Documentación LaTeX
+# ============================================================================
+
+# --- ARCHIVOS DE COMPILACIÓN LATEX ---
+# Archivos auxiliares de LaTeX
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+.*.lb
+
+# Archivos de bibliografía
+*.bbl
+*.bcf
+*.blg
+*-blx.aux
+*-blx.bib
+*.run.xml
+
+# Archivos de índices
+*.idx
+*.ilg
+*.ind
+
+# Archivos de glosarios
+*.acn
+*.acr
+*.glg
+*.glo
+*.gls
+*.glsdefs
+*.lzo
+*.lzs
+
+# Archivos de hyperref
+*.figlist
+*.makefile
+*.xref
+
+# Archivos de tikz y pgf
+*.figlist
+*.makefile
+*.xref
+*.upa
+*.upb
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+*.synctex(busy)
+
+# Archivos de beamer
+*.nav
+*.pre
+*.snm
+*.vrb
+
+# Archivos temporales de editores
+*~
+*.swp
+*.swo
+*~lock*
+.#*
+\#*\#
+
+# Directorios de compilación
+_minted-*/
+_build/
+build/
+.texpadtmp/
+
+# Backups automáticos
+*.backup
+*.bak
+*.old
+*~
+
+# --- ARCHIVOS DE IMAGEN GENERADOS ---
+# Imágenes capturadas (pueden ser muy grandes)
+storage/fullres/*.jpg
+storage/enhanced/*.jpg
+received_images/*.jpg
+uploads/*.jpg
+*.jpg
+*.jpeg
+*.png
+*.bmp
+
+# Excepciones para imágenes de documentación
+!docs/images/
+!figuras/
+!Figuras/
+
+# --- ARCHIVOS DE DATOS Y LOGS ---
+# Logs del sistema
+storage/logs/*.log
+logs/*.log
+*.log
+
+# Archivos de configuración con datos sensibles
+config_local.json
+.env
+.env.local
+secrets.json
+
+# Datos temporales
+tmp/
+temp/
+*.tmp
+
+# --- ARCHIVOS DE DESARROLLO ---
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# IDEs y editores
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# --- ARCHIVOS DE SISTEMAS EMBEBIDOS ---
+# Arduino/PlatformIO
+.pio/
+.vscode/
+*.ino.bin
+*.ino.elf
+*.ino.map
+
+# Herramientas de compilación
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# --- ARCHIVOS DE COMUNICACIÓN SERIE ---
+# Dumps de puerto serie para debugging
+*.dump
+*.trace
+serial_*.txt
+
+# --- ARCHIVOS DEL SISTEMA ---
+# Archivos de sistema Linux/Windows
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# --- ARCHIVOS DE BACKUP Y VERSIONADO ---
+# Backups automáticos
+*.backup
+*.bak
+*~
+.backup/
+
+# Archivos de merge/diff
+*.orig
+*.rej
+
+# --- CONFIGURACIONES ESPECÍFICAS DEL PROYECTO ---
+# Configuración local de puertos serie
+puerto_local.conf
+config_dev.json
+
+# Archivos de calibración sensibles
+calibration/*.dat
+calibration/*.cal
+
+# Certificados y claves
+*.pem
+*.key
+*.crt
+*.p12
+
+# --- ARCHIVOS DE TESTING ---
+# Resultados de pruebas
+test_results/
+coverage_html/
+.coverage
+.pytest_cache/
+
+# Imágenes de prueba generadas
+test_*.jpg
+sample_*.jpg
+debug_*.jpg
+
+# --- ARCHIVOS DE DOCUMENTACIÓN ESPECÍFICOS ---
+# PDFs generados (mantener solo la versión final)
+*.pdf
+!docs/requerimientos.pdf
+!README.pdf
+
+# Archivos temporales de LaTeX específicos del proyecto
+requerimientos.aux
+requerimientos.log
+requerimientos.out
+requerimientos.toc
+requerimientos.synctex.gz
+
+# Archivos de figuras generadas automáticamente
+auto_*.eps
+auto_*.pdf
+
+# --- ARCHIVOS DE DEPLOYMENT ---
+# Configuraciones de producción
+production.json
+deployment.yml
+docker-compose.override.yml
+
+# Archivos de instalación personalizados
+install_local.sh
+setup_custom.sh
+
+# --- ARCHIVOS DE MONITOREO ---
+# Estadísticas de uso
+stats/
+metrics/
+performance_*.json
+
+# --- DIRECTORIOS DE BUILD ---
+# Directorios de compilación y distribución
+bin/
+obj/
+out/
+target/
+
+# --- ARCHIVOS DE RED ---
+# Configuraciones de red específicas
+network_config.json
+wifi_credentials.conf
+
+# --- MANTENER ESTOS ARCHIVOS IMPORTANTES ---
+# Asegurar que estos NO se ignoren
+!.gitignore
+!README.md
+!LICENSE
+!requirements.txt
+!config.json.example
+!docs/protocolo.md
+!install.sh
+!src/
+!tests/
+!examples/
+
+# --- ARCHIVOS DE ANÁLISIS DE CÓDIGO ---
+# Reportes de análisis estático
+.sonarqube/
+.scannerwork/
+eslint-report.html
+coverage.xml
+
+# --- ARCHIVOS DE INTEGRACIÓN CONTINUA ---
+# Artifacts de CI/CD locales
+.github/workflows/artifacts/
+ci_build/
+test_artifacts/
