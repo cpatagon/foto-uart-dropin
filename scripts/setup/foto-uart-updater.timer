@@ -1,0 +1,21 @@
+# Timer systemd para ejecutar auto-actualización cada 6 horas
+# Instalar con: sudo cp foto-uart-updater.timer /etc/systemd/system/
+# Habilitar con: sudo systemctl enable --now foto-uart-updater.timer
+
+[Unit]
+Description=Run FotoUART Auto-Updater every 6 hours
+Documentation=https://github.com/cpatagon/foto-uart-dropin
+Requires=foto-uart-updater.service
+
+[Timer]
+# Ejecutar cada 6 horas
+OnCalendar=*-*-* 00,06,12,18:00:00
+# Ejecutar 5 minutos después del boot si se perdió una ejecución
+OnBootSec=5min
+# Randomizar hasta 30 minutos para evitar sobrecarga del servidor
+RandomizedDelaySec=30min
+# Persistir timer a través de reinicios
+Persistent=true
+
+[Install]
+WantedBy=timers.target
