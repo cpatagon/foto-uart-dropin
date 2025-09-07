@@ -12,7 +12,7 @@ authors = [
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.8"
-keywords = ["raspberry-pi", "esp32", "camera", "uart", "image-processing", "iot"]
+keywords = ["pi-zero", "raspberry-pi-zero-w", "pi-zero", "raspberry-pi-zero-w", "raspberry-pi", "esp32", "camera", "uart", "image-processing", "iot"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -25,6 +25,8 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Topic :: Software Development :: Embedded Systems",
     "Topic :: Multimedia :: Graphics :: Capture :: Digital Camera",
+    "Topic :: System :: Hardware :: Raspberry Pi",
+    "Topic :: System :: Hardware :: Raspberry Pi",
     "Topic :: Communications",
 ]
 
