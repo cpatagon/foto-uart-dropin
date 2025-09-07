@@ -1,0 +1,29 @@
+{
+  "serial": { 
+    "puerto": "/dev/ttyAMA0", 
+    "baudrate": 115200, 
+    "timeout": 1 
+  },
+  "imagen": {
+    "ancho_default": 1024,
+    "calidad_default": 5,
+    "chunk_size": 256,
+    "ack_timeout": 10,
+    "jpeg_progressive": true
+  },
+  "almacenamiento": {
+    "directorio_fullres": "data/images/raw",
+    "directorio_enhanced": "data/images/processed",
+    "mantener_originales": true,
+    "logs_dir": "data/logs"
+  },
+  "procesamiento": { 
+    "aplicar_mejoras": true, 
+    "unsharp_mask": true, 
+    "clahe_enabled": true 
+  },
+  "limites": { 
+    "max_jpeg_bytes": 112640, 
+    "fallback_quality_drop": 10 
+  }
+}

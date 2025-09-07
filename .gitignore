@@ -1,0 +1,123 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Data directories - IMPORTANT for your project
+data/
+storage/
+uploads/
+fullres/
+enhanced/
+logs/
+temp/
+
+# Configuration files with sensitive data
+config.json
+.env
+.env.local
+.env.production
+wifi_config.h
+secrets.h
+
+# Hardware specific
+*.bin
+*.hex
+*.elf
+*.map
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Documentation builds
+docs/_build/
+docs/api/
+site/
+
+# Arduino/ESP32 specific
+libraries/
+hardware/
+tools/
+
+# Logs
+*.log
+
+# Images (except documentation)
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+!docs/images/*
+!hardware/schematics/*
+
+# Temporary files
+tmp/
+*.tmp
+*.temp
