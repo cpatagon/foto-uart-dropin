@@ -168,7 +168,7 @@ class FotoUART:
         """Inicializa y configura la cámara Picamera2."""
         try:
             self.cam = Picamera2()
-            config = self.cam.create_still_configuration(main={"size": (2304, 1296), "format": "YUV420"}, raw=None, buffer_count=2)
+            config = self.cam.create_still_configuration()
             self.cam.configure(config)
             self.cam.start()
             self.logger.info("Cámara inicializada correctamente")
