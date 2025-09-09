@@ -59,8 +59,7 @@ class CamaraUART:
             
             # Enviar confirmación por UART
             if self.serial_conn:
-                tamano_bytes = os.path.getsize(ruta_completa)
-                self.serial_conn.write(f"OK|{nombre_archivo}|{tamano_bytes}|{ruta_completa}\r\n".encode())
+                self.serial_conn.write(f"OK:{nombre_archivo}\r\n".encode())
             
             return ruta_completa
             
@@ -114,10 +113,48 @@ class CamaraUART:
             except:
                 print("❌ Formato de resolución inválido. Usar: res:1920x1080")
                 
+                
+        elif comando.startswith("baudrate:") or comando.startswith("velocidad:"):
+            try:
+                # Extraer nueva velocidad del comando
+                nueva_velocidad = int(comando.split(":")[1])
+        
+                # Validar velocidades permitidas
+                velocidades_validas = [9600, 19200, 38400, 57600, 115200]
+        
+                if nueva_velocidad in velocidades_validas:
+                    # Enviar confirmación antes del cambio
+                    if self.serial_conn:
+                        self.serial_conn.write(f"OK:Cambiando a {nueva_velocidad} en 3 segundos\r\n".encode())
+            
+                    print(f"⏱️  Preparando cambio de velocidad a {nueva_velocidad}")
+            
+                    # Pausa para que llegue el mensaje
+                    time.sleep(1)
+            
+                    # Cambiar velocidad y reconectar
+                    self.cambiar_velocidad(nueva_velocidad)
+                else:
+                    error_msg = f"ERROR:Velocidad no valida. Usar: {velocidades_validas}"
+                    print(f"❌ {error_msg}")
+                    if self.serial_conn:
+                        self.serial_conn.write(f"{error_msg}\r\n".encode())
+                
+            except ValueError:
+                error_msg = "ERROR:Formato invalido. Usar: baudrate:9600"
+                print(f"❌ {error_msg}")
+                if self.serial_conn:
+                    self.serial_conn.write(f"{error_msg}\r\n".encode())
+            except Exception as e:
+                error_msg = f"ERROR:Error al procesar comando - {str(e)}"
+                print(f"❌ {error_msg}")
+                if self.serial_conn:
+                    self.serial_conn.write(f"{error_msg}\r\n".encode())
+                
         elif comando != "":
             print(f"❓ Comando desconocido: {comando}")
             if self.serial_conn:
-                comandos_disponibles = "foto, salir, estado, res:WIDTHxHEIGHT"
+                comandos_disponibles = "foto, salir, estado, res:WIDTHxHEIGHT, baudrate:VELOCIDAD"
                 self.serial_conn.write(f"ERROR:Comando desconocido. Disponibles: {comandos_disponibles}\r\n".encode())
 
     def escuchar_uart(self):
@@ -151,6 +188,48 @@ class CamaraUART:
             except Exception as e:
                 print(f"❌ Error inesperado: {e}")
                 time.sleep(1)
+
+    def cambiar_velocidad(self, nueva_velocidad):
+        """
+        Cambia la velocidad de conexión UART
+        """
+        try:
+            print(f"🔄 Cambiando velocidad de {self.baudrate} a {nueva_velocidad}")
+        
+            # Cerrar conexión actual
+            if self.serial_conn:
+                self.serial_conn.close()
+        
+            # Actualizar parámetros
+            self.baudrate = nueva_velocidad
+        
+            # Pausa para estabilizar
+            time.sleep(2)
+        
+            # Reconectar con nueva velocidad
+            self.serial_conn = serial.Serial(
+                port=self.puerto,
+                baudrate=self.baudrate,
+                timeout=1,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE,
+                bytesize=serial.EIGHTBITS
+            )
+        
+            # Confirmar cambio
+            self.serial_conn.write(f"BAUDRATE_CHANGED|{self.baudrate}\r\n".encode())
+            print(f"✅ Velocidad cambiada a {nueva_velocidad}")
+        
+        except Exception as e:
+            print(f"❌ Error al cambiar velocidad: {e}")
+            # Intentar volver a la velocidad anterior
+            try:
+                self.baudrate = 9600  # velocidad por defecto
+                self.serial_conn = serial.Serial(self.puerto, 9600, timeout=1)
+                print("🔄 Revirtiendo a 9600 baudios")
+            except:
+                print("❌ No se pudo revertir la velocidad")
+
 
     def iniciar(self):
         """
@@ -208,7 +287,8 @@ class CamaraUART:
                 pass
         
         print("✅ Sistema detenido")
-
+        
+   
 # Función para uso directo
 def iniciar_camara_uart(puerto='/dev/ttyS0', baudrate=9600, directorio="fotos"):
     """
